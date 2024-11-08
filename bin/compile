@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# bin/compile <build-dir> <cache-dir> <env-dir>
+
+# Ensure wildcards in globs match dotfiles too.
+shopt -s dotglob
+
+BUILD_DIR=${1:-}
+CACHE_DIR=${2:-}
+ENV_DIR=${3:-}
+
+DEMO_PATH="docs/demo"
+LOCO_VENDOR_PATH="vendor/loco_motion-rails"
+
+if [ -d $BUILD_DIR/$DEMO_PATH ]; then
+  echo "-----> LocoMotion buildpack in $DEMO_PATH"
+
+  echo "       creating cache: $CACHE_DIR"
+  mkdir -p $CACHE_DIR
+
+  TMP_DIR=`mktemp -d $CACHE_DIR/subdirXXXXX`
+  echo "       created tmp dir: $TMP_DIR"
+
+  # Copy the demo site to the tmp dir
+  echo "       moving working dir: $DEMO_PATH to $TMP_DIR"
+  cp -R $BUILD_DIR/$DEMO_PATH/. $TMP_DIR/
+
+  # Create the vendor path inside of the new tmp dir
+  echo "       creating vendor path: $TMP_DIR/$LOCO_VENDOR_PATH"
+  mkdir -p "$TMP_DIR/$LOCO_VENDOR_PATH"
+
+  # Copy the gem files to the vendor path
+  echo "       moving relevant gem files: $BUILD_DIR to $TMP_DIR/$LOCO_VENDOR_PATH"
+  cp -R $BUILD_DIR/app                       $TMP_DIR/$LOCO_VENDOR_PATH/
+  cp -R $BUILD_DIR/bin                       $TMP_DIR/$LOCO_VENDOR_PATH/
+  cp -R $BUILD_DIR/lib                       $TMP_DIR/$LOCO_VENDOR_PATH/
+  cp -R $BUILD_DIR/.ruby-version             $TMP_DIR/$LOCO_VENDOR_PATH/
+  cp -R $BUILD_DIR/app.json                  $TMP_DIR/$LOCO_VENDOR_PATH/
+  cp -R $BUILD_DIR/Gemfile                   $TMP_DIR/$LOCO_VENDOR_PATH/
+  cp -R $BUILD_DIR/Gemfile.lock              $TMP_DIR/$LOCO_VENDOR_PATH/
+  cp -R $BUILD_DIR/index.js                  $TMP_DIR/$LOCO_VENDOR_PATH/
+  cp -R $BUILD_DIR/LICENSE                   $TMP_DIR/$LOCO_VENDOR_PATH/
+  cp -R $BUILD_DIR/loco_motion-rails.gemspec $TMP_DIR/$LOCO_VENDOR_PATH/
+  cp -R $BUILD_DIR/package.json              $TMP_DIR/$LOCO_VENDOR_PATH/
+  cp -R $BUILD_DIR/VERSION                   $TMP_DIR/$LOCO_VENDOR_PATH/
+  cp -R $BUILD_DIR/yarn.lock                 $TMP_DIR/$LOCO_VENDOR_PATH/
+
+  echo "       cleaning build dir $BUILD_DIR"
+  rm -rf $BUILD_DIR/*
+
+  echo "       copying preserved work dir from cache $TMP_DIR to build dir $BUILD_DIR"
+  cp -R $TMP_DIR/. $BUILD_DIR/
+
+  echo "       cleaning tmp dir $TMP_DIR"
+  rm -rf $TMP_DIR
+
+  exit 0
+fi
